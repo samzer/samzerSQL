@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f7f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d8e0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b8c2cc;
+}
+
+/* Prevent text selection during drag operations */
+.dragging {
+  user-select: none;
+}
+
+/* Electron window drag region */
+.draggable {
+  -webkit-app-region: drag;
+}
+
+/* Prevent dragging on interactive elements within drag region */
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* CodeMirror custom styles */
+.cm-editor {
+  height: 100%;
+  font-family: 'JetBrains Mono', 'Fira Code', Monaco, Consolas, monospace;
+}
+
+.cm-editor .cm-scroller {
+  font-family: inherit;
+}
+
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+/* Tab drag-over styles */
+.tab-drag-over {
+  background-color: #e8ecf1;
+}
+
+/* Button hover transitions */
+button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Focus ring styles */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #a8d4f0;
+}
+
+/* Tooltip styles */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #2c3e50;
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
+/* Prevent layout shifts during animations */
+.animate-fade-in {
+  will-change: opacity;
+}
+
+.animate-slide-in {
+  will-change: opacity, transform;
+}

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:vite:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:main:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run:*)",
+      "Bash(tsc:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(open:*)",
+      "Bash(ls:*)",
+      "Bash(pkill:*)"
+    ]
+  }
+}
