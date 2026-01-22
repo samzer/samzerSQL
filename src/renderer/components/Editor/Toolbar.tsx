@@ -8,7 +8,7 @@ const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase
 const modKey = isMac ? '⌘' : 'Ctrl';
 
 export default function Toolbar() {
-  const { tabs, activeTabId, executeQuery, cancelQuery, setTabDirty } = useEditorStore();
+  const { tabs, activeTabId, cancelQuery, setTabDirty } = useEditorStore();
   const { connections, activeConnectionId } = useConnectionStore();
   const { updateQuery, getQueryById } = useQueryStore();
   const { addToast } = useUIStore();
@@ -17,19 +17,11 @@ export default function Toolbar() {
   const activeConnection = connections.find((c) => c.id === (activeTab?.connectionId || activeConnectionId));
   const isConnected = activeConnection?.status === 'connected';
 
-  const handleRun = async () => {
-    if (!activeTab || !activeConnection || !isConnected) {
-      addToast({ type: 'warning', message: 'Please connect to a database first' });
-      return;
-    }
-
-    const query = activeTab.content.trim();
-    if (!query) {
-      addToast({ type: 'warning', message: 'No query to execute' });
-      return;
-    }
-
-    await executeQuery(activeTab.id, query, activeConnection.id, activeConnection.config.name);
+  const handleRun = () => {
+    if (!activeTab) return;
+    // Dispatch a custom event that SQLEditor listens for
+    // This allows SQLEditor to access the selection and handle multi-statement execution
+    window.dispatchEvent(new CustomEvent('run-query', { detail: { tabId: activeTab.id } }));
   };
 
   const handleCancel = async () => {

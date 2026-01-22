@@ -11,6 +11,8 @@ import { useConnectionStore } from '../../stores/connectionStore';
 import { format } from 'sql-formatter';
 import { useUIStore } from '../../stores/uiStore';
 import { useQueryStore } from '../../stores/queryStore';
+import { v4 as uuidv4 } from 'uuid';
+import { QueryResult } from '../../../shared/types';
 
 interface SQLEditorProps {
   tabId: string;
@@ -418,6 +420,76 @@ export default function SQLEditor({ tabId, initialContent }: SQLEditorProps) {
     });
   }, [getDialect]);
 
+  // Split SQL content into individual statements by semicolon
+  const splitStatements = useCallback((content: string): string[] => {
+    // Split by semicolon but be careful about strings and comments
+    const statements: string[] = [];
+    let current = '';
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+    let inLineComment = false;
+    let inBlockComment = false;
+
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+      const nextChar = content[i + 1];
+
+      // Handle line comments
+      if (!inSingleQuote && !inDoubleQuote && !inBlockComment && char === '-' && nextChar === '-') {
+        inLineComment = true;
+        current += char;
+        continue;
+      }
+      if (inLineComment && char === '\n') {
+        inLineComment = false;
+        current += char;
+        continue;
+      }
+
+      // Handle block comments
+      if (!inSingleQuote && !inDoubleQuote && !inLineComment && char === '/' && nextChar === '*') {
+        inBlockComment = true;
+        current += char;
+        continue;
+      }
+      if (inBlockComment && char === '*' && nextChar === '/') {
+        inBlockComment = false;
+        current += char + nextChar;
+        i++;
+        continue;
+      }
+
+      // Handle quotes
+      if (!inLineComment && !inBlockComment) {
+        if (char === "'" && !inDoubleQuote) {
+          inSingleQuote = !inSingleQuote;
+        } else if (char === '"' && !inSingleQuote) {
+          inDoubleQuote = !inDoubleQuote;
+        }
+      }
+
+      // Check for semicolon
+      if (char === ';' && !inSingleQuote && !inDoubleQuote && !inLineComment && !inBlockComment) {
+        const stmt = current.trim();
+        if (stmt) {
+          statements.push(stmt);
+        }
+        current = '';
+        continue;
+      }
+
+      current += char;
+    }
+
+    // Don't forget the last statement (may not end with semicolon)
+    const lastStmt = current.trim();
+    if (lastStmt) {
+      statements.push(lastStmt);
+    }
+
+    return statements;
+  }, []);
+
   const handleRunQuery = useCallback(async () => {
     const connections = useConnectionStore.getState().connections;
     const tabs = useEditorStore.getState().tabs;
@@ -429,13 +501,124 @@ export default function SQLEditor({ tabId, initialContent }: SQLEditorProps) {
       callbacksRef.current.addToast({ type: 'warning', message: 'Please connect to a database first' });
       return;
     }
-    const content = viewRef.current?.state.doc.toString() || '';
-    if (!content.trim()) {
+
+    // Check if there's a selection - if so, execute only the selected text
+    const view = viewRef.current;
+    if (!view) return;
+
+    const selection = view.state.selection.main;
+    let contentToExecute: string;
+
+    if (selection.from !== selection.to) {
+      // There's a selection - execute only the selected text
+      contentToExecute = view.state.sliceDoc(selection.from, selection.to);
+    } else {
+      // No selection - execute the full content
+      contentToExecute = view.state.doc.toString();
+    }
+
+    if (!contentToExecute.trim()) {
       callbacksRef.current.addToast({ type: 'warning', message: 'No query to execute' });
       return;
     }
-    await callbacksRef.current.executeQuery(tabIdRef.current, content, activeConnection.id, activeConnection.config.name);
-  }, []);
+
+    // Split into statements
+    const statements = splitStatements(contentToExecute);
+
+    if (statements.length === 0) {
+      callbacksRef.current.addToast({ type: 'warning', message: 'No query to execute' });
+      return;
+    }
+
+    // Execute statements
+    if (statements.length === 1) {
+      // Single statement - execute normally
+      await callbacksRef.current.executeQuery(tabIdRef.current, statements[0], activeConnection.id, activeConnection.config.name);
+    } else {
+      // Multiple statements - execute sequentially
+      callbacksRef.current.addToast({ type: 'info', message: `Executing ${statements.length} statements...` });
+
+      const { setTabExecuting, setTabResult, addHistoryEntry } = useEditorStore.getState();
+      setTabExecuting(tabIdRef.current, true);
+      setTabResult(tabIdRef.current, undefined);
+
+      let lastSelectResult: QueryResult | null = null;
+      let totalAffectedRows = 0;
+      let totalExecutionTime = 0;
+      let errorOccurred: string | undefined;
+
+      for (let i = 0; i < statements.length; i++) {
+        const stmt = statements[i];
+        try {
+          const result = await window.electron.db.executeQuery(activeConnection.id, stmt);
+          totalExecutionTime += result.executionTime;
+
+          if (result.error) {
+            errorOccurred = `Statement ${i + 1}: ${result.error}`;
+            break;
+          }
+
+          // Check if this is a SELECT statement (has columns/rows)
+          if (result.columns && result.columns.length > 0) {
+            lastSelectResult = result;
+          } else {
+            totalAffectedRows += result.rowCount || 0;
+          }
+
+          // Add each statement to history
+          addHistoryEntry({
+            id: uuidv4(),
+            query: stmt,
+            connectionId: activeConnection.id,
+            connectionName: activeConnection.config.name,
+            executedAt: new Date().toISOString(),
+            executionTime: result.executionTime,
+            rowCount: result.rowCount,
+            error: result.error,
+          });
+        } catch (error) {
+          errorOccurred = `Statement ${i + 1}: ${error instanceof Error ? error.message : 'Execution failed'}`;
+          break;
+        }
+      }
+
+      // Set the final result
+      if (errorOccurred) {
+        setTabResult(tabIdRef.current, {
+          columns: [],
+          rows: [],
+          rowCount: 0,
+          executionTime: totalExecutionTime,
+          error: errorOccurred,
+        });
+        callbacksRef.current.addToast({ type: 'error', message: errorOccurred });
+      } else if (lastSelectResult) {
+        // Show the last SELECT result
+        setTabResult(tabIdRef.current, {
+          ...lastSelectResult,
+          executionTime: totalExecutionTime,
+        });
+        callbacksRef.current.addToast({
+          type: 'success',
+          message: `${statements.length} statements executed (${lastSelectResult.rowCount} rows returned)`
+        });
+      } else {
+        // Only non-SELECT statements were executed
+        setTabResult(tabIdRef.current, {
+          columns: [],
+          rows: [],
+          rowCount: totalAffectedRows,
+          executionTime: totalExecutionTime,
+        });
+        callbacksRef.current.addToast({
+          type: 'success',
+          message: `${statements.length} statements executed (${totalAffectedRows} rows affected)`
+        });
+      }
+
+      setTabExecuting(tabIdRef.current, false);
+    }
+  }, [splitStatements]);
 
   const handleSaveQuery = useCallback(async () => {
     const tabs = useEditorStore.getState().tabs;
@@ -497,6 +680,19 @@ export default function SQLEditor({ tabId, initialContent }: SQLEditorProps) {
     window.addEventListener('format-query', handleFormatEvent);
     return () => window.removeEventListener('format-query', handleFormatEvent);
   }, [handleFormatQuery]);
+
+  // Listen for run-query event from toolbar
+  useEffect(() => {
+    const handleRunEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ tabId: string }>;
+      if (customEvent.detail.tabId === tabIdRef.current) {
+        handleRunQuery();
+      }
+    };
+
+    window.addEventListener('run-query', handleRunEvent);
+    return () => window.removeEventListener('run-query', handleRunEvent);
+  }, [handleRunQuery]);
 
   // Update SQL configuration when schema data changes
   useEffect(() => {
