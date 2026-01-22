@@ -1,6 +1,6 @@
 # samzerSQL
 
-A cross-platform desktop SQL client for Snowflake, MySQL, and PostgreSQL with a clean, pastel-themed UI.
+A cross-platform desktop SQL client for Snowflake, MySQL, and PostgreSQL with a clean, and minimalistic UI. 
 
 ![samzerSQL Screenshot](src/renderer/assets/screenshot.png)
 
