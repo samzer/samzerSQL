@@ -12,7 +12,9 @@
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(open:*)",
       "Bash(ls:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(sips:*)",
+      "Bash(iconutil:*)"
     ]
   }
 }
