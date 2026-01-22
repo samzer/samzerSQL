@@ -16,6 +16,7 @@ interface EditorState {
   updateTabConnection: (id: string, connectionId: string | undefined) => void;
   setTabDirty: (id: string, isDirty: boolean) => void;
   setTabExecuting: (id: string, isExecuting: boolean) => void;
+  updateTabName: (queryFileId: string, name: string) => void;
   setTabResult: (id: string, result: QueryResult | undefined) => void;
   executeQuery: (tabId: string, query: string, connectionId: string, connectionName: string) => Promise<QueryResult>;
   cancelQuery: (tabId: string, connectionId: string) => Promise<void>;
@@ -138,6 +139,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => ({
       tabs: state.tabs.map((tab) =>
         tab.id === id ? { ...tab, isExecuting } : tab
+      ),
+    }));
+  },
+
+  updateTabName: (queryFileId, name) => {
+    set((state) => ({
+      tabs: state.tabs.map((tab) =>
+        tab.queryFileId === queryFileId ? { ...tab, name } : tab
       ),
     }));
   },

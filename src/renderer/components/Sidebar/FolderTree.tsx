@@ -323,7 +323,7 @@ interface QueryItemProps {
 
 function QueryItem({ query, level }: QueryItemProps) {
   const { deleteQuery, updateQuery } = useQueryStore();
-  const { tabs, createTab, setActiveTab } = useEditorStore();
+  const { tabs, createTab, setActiveTab, updateTabName } = useEditorStore();
   const { addToast } = useUIStore();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -366,7 +366,10 @@ function QueryItem({ query, level }: QueryItemProps) {
 
   const submitRename = async () => {
     if (newName.trim() && newName !== query.name) {
-      await updateQuery({ ...query, name: newName.trim() });
+      const trimmedName = newName.trim();
+      await updateQuery({ ...query, name: trimmedName });
+      // Update the tab name if this query is open in a tab
+      updateTabName(query.id, trimmedName);
       addToast({ type: 'success', message: 'Query renamed' });
     }
     setIsRenaming(false);

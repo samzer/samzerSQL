@@ -2,10 +2,9 @@ import { useEditorStore } from '../../stores/editorStore';
 import { useConnectionStore } from '../../stores/connectionStore';
 import { useQueryStore } from '../../stores/queryStore';
 import { useUIStore } from '../../stores/uiStore';
-import { format } from 'sql-formatter';
 
 export default function Toolbar() {
-  const { tabs, activeTabId, executeQuery, cancelQuery, updateTabContent, setTabDirty } = useEditorStore();
+  const { tabs, activeTabId, executeQuery, cancelQuery, setTabDirty } = useEditorStore();
   const { connections, activeConnectionId } = useConnectionStore();
   const { updateQuery, getQueryById } = useQueryStore();
   const { addToast } = useUIStore();
@@ -55,29 +54,8 @@ export default function Toolbar() {
 
   const handleFormat = () => {
     if (!activeTab) return;
-
-    try {
-      const formatted = format(activeTab.content, {
-        language: getDialect(activeConnection?.config.type),
-        tabWidth: 2,
-        keywordCase: 'upper',
-      });
-      updateTabContent(activeTab.id, formatted);
-      addToast({ type: 'success', message: 'Query formatted' });
-    } catch (error) {
-      addToast({ type: 'error', message: 'Failed to format query' });
-    }
-  };
-
-  const getDialect = (type?: string): 'postgresql' | 'mysql' | 'sql' => {
-    switch (type) {
-      case 'postgresql':
-        return 'postgresql';
-      case 'mysql':
-        return 'mysql';
-      default:
-        return 'sql';
-    }
+    // Dispatch a custom event that SQLEditor listens for
+    window.dispatchEvent(new CustomEvent('format-query', { detail: { tabId: activeTab.id } }));
   };
 
   return (

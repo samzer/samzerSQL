@@ -485,6 +485,19 @@ export default function SQLEditor({ tabId, initialContent }: SQLEditorProps) {
     }
   }, []);
 
+  // Listen for format-query event from toolbar
+  useEffect(() => {
+    const handleFormatEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ tabId: string }>;
+      if (customEvent.detail.tabId === tabIdRef.current) {
+        handleFormatQuery();
+      }
+    };
+
+    window.addEventListener('format-query', handleFormatEvent);
+    return () => window.removeEventListener('format-query', handleFormatEvent);
+  }, [handleFormatQuery]);
+
   // Update SQL configuration when schema data changes
   useEffect(() => {
     if (!viewRef.current) return;
