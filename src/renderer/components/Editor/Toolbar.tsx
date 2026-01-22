@@ -3,6 +3,10 @@ import { useConnectionStore } from '../../stores/connectionStore';
 import { useQueryStore } from '../../stores/queryStore';
 import { useUIStore } from '../../stores/uiStore';
 
+// Detect if user is on Mac
+const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+const modKey = isMac ? '⌘' : 'Ctrl';
+
 export default function Toolbar() {
   const { tabs, activeTabId, executeQuery, cancelQuery, setTabDirty } = useEditorStore();
   const { connections, activeConnectionId } = useConnectionStore();
@@ -82,7 +86,7 @@ export default function Toolbar() {
             </svg>
           }
           label="Run"
-          shortcut="Ctrl+Enter"
+          shortcut={`${modKey}+Enter`}
           variant="primary"
           disabled={!isConnected}
         />
@@ -99,7 +103,7 @@ export default function Toolbar() {
           </svg>
         }
         label="Save"
-        shortcut="Ctrl+S"
+        shortcut={`${modKey}+S`}
         disabled={!activeTab?.isDirty}
       />
 
@@ -112,7 +116,7 @@ export default function Toolbar() {
           </svg>
         }
         label="Format"
-        shortcut="Ctrl+Shift+F"
+        shortcut={`${modKey}+Shift+F`}
       />
 
       <div className="flex-1" />
