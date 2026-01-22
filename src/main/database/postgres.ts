@@ -5,6 +5,7 @@ import { ConnectionConfig, QueryResult, SchemaInfo, ColumnInfo, TableInfo } from
 export class PostgresAdapter implements DatabaseAdapter {
   private pool: Pool | null = null;
   private activeClient: PoolClient | null = null;
+  private backendPid: number | null = null;
 
   async connect(config: ConnectionConfig): Promise<{ success: boolean; error?: string }> {
     try {
@@ -87,8 +88,14 @@ export class PostgresAdapter implements DatabaseAdapter {
 
     try {
       this.activeClient = await this.pool.connect();
+
+      // Get the backend PID for this connection so we can cancel it later
+      const pidResult = await this.activeClient.query('SELECT pg_backend_pid()');
+      this.backendPid = pidResult.rows[0].pg_backend_pid;
+
       const result = await this.activeClient.query(query);
       const executionTime = Date.now() - startTime;
+      this.backendPid = null;
 
       const columns: ColumnInfo[] = result.fields.map((field) => ({
         name: field.name,
@@ -119,17 +126,17 @@ export class PostgresAdapter implements DatabaseAdapter {
   }
 
   async cancelQuery(): Promise<void> {
-    if (this.activeClient) {
-      // PostgreSQL doesn't have a direct cancel method on the client
-      // We need to execute pg_cancel_backend on another connection
-      if (this.pool) {
-        try {
-          const client = await this.pool.connect();
-          // This is a simplified cancellation - in production you'd track the backend PID
-          client.release();
-        } catch {
-          // Ignore cancel errors
-        }
+    if (this.backendPid && this.pool) {
+      try {
+        // Use a separate connection to cancel the running query
+        const client = await this.pool.connect();
+        await client.query('SELECT pg_cancel_backend($1)', [this.backendPid]);
+        client.release();
+        console.log(`Cancelled PostgreSQL query on backend PID: ${this.backendPid}`);
+      } catch (error) {
+        console.error('Error cancelling PostgreSQL query:', error);
+      } finally {
+        this.backendPid = null;
       }
     }
   }

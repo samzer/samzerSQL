@@ -4,6 +4,7 @@ import { ConnectionConfig, QueryResult, SchemaInfo, ColumnInfo, TableInfo } from
 
 export class MySQLAdapter implements DatabaseAdapter {
   private connection: mysql.Connection | null = null;
+  private threadId: number | null = null;
 
   async connect(config: ConnectionConfig): Promise<{ success: boolean; error?: string }> {
     try {
@@ -76,8 +77,12 @@ export class MySQLAdapter implements DatabaseAdapter {
     const startTime = Date.now();
 
     try {
+      // Store the thread ID for potential cancellation
+      this.threadId = this.connection.threadId ?? null;
+
       const [rows, fields] = await this.connection.query(query);
       const executionTime = Date.now() - startTime;
+      this.threadId = null;
 
       if (!Array.isArray(rows)) {
         // INSERT, UPDATE, DELETE, etc.
@@ -103,6 +108,7 @@ export class MySQLAdapter implements DatabaseAdapter {
         executionTime,
       };
     } catch (error) {
+      this.threadId = null;
       return {
         columns: [],
         rows: [],
@@ -114,8 +120,17 @@ export class MySQLAdapter implements DatabaseAdapter {
   }
 
   async cancelQuery(): Promise<void> {
-    // MySQL doesn't have a direct query cancellation mechanism
-    // In production, you'd need to kill the connection thread
+    if (this.threadId && this.connection) {
+      try {
+        // Use KILL QUERY to cancel the running query without disconnecting
+        await this.connection.query(`KILL QUERY ${this.threadId}`);
+        console.log(`Cancelled MySQL query on thread ID: ${this.threadId}`);
+      } catch (error) {
+        console.error('Error cancelling MySQL query:', error);
+      } finally {
+        this.threadId = null;
+      }
+    }
   }
 
   async getSchema(): Promise<SchemaInfo> {
