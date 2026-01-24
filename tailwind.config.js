@@ -74,6 +74,7 @@ export default {
         'soft': '0 2px 8px rgba(0, 0, 0, 0.06)',
         'soft-lg': '0 4px 16px rgba(0, 0, 0, 0.08)',
         'inner-soft': 'inset 0 2px 4px rgba(0, 0, 0, 0.04)',
+        'glow-green': '0 0 10px rgba(39, 174, 96, 0.5), 0 0 20px rgba(39, 174, 96, 0.3)',
       },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-out',

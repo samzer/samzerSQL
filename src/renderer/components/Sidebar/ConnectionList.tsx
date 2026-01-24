@@ -94,9 +94,10 @@ function ConnectionItem({ connection }: { connection: Connection }) {
       onClick={handleClick}
       className={`
         group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer
-        ${isActive ? 'bg-pastel-bg-active' : 'hover:bg-pastel-bg-hover'}
+        ${isActive ? 'border-2 border-pastel-accent-blue-text' : 'border-2 border-transparent hover:bg-pastel-bg-hover'}
         ${!isConnected ? 'opacity-70' : ''}
-        transition-colors
+        ${isConnected ? 'bg-pastel-accent-green/40 shadow-glow-green' : ''}
+        transition-all duration-300
       `}
     >
       {/* Database type badge */}

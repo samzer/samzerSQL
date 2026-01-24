@@ -1,6 +1,6 @@
 {
   "name": "samzersql",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Cross-platform desktop SQL client for Snowflake, MySQL, and PostgreSQL",
   "author": "Samir Madhavan",
   "main": "dist/main/index.js",
