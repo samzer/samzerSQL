@@ -6,6 +6,7 @@ interface SnowflakeConnection {
   connect: (callback: (err: Error | undefined, conn: SnowflakeConnection) => void) => void;
   execute: (options: {
     sqlText: string;
+    fetchAsString?: string[];
     complete: (err: Error | undefined, stmt: any, rows: any[]) => void;
   }) => { cancel: (callback: (err: Error | undefined) => void) => void };
   destroy: (callback: (err: Error | undefined) => void) => void;
@@ -145,6 +146,7 @@ export class SnowflakeAdapter implements DatabaseAdapter {
     return new Promise((resolve) => {
       this.currentStatement = this.connection!.execute({
         sqlText: query,
+        fetchAsString: ['Date'],
         complete: (err, stmt, rows) => {
           this.currentStatement = null;
           const executionTime = Date.now() - startTime;

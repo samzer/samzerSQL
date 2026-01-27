@@ -16,6 +16,7 @@ export class MySQLAdapter implements DatabaseAdapter {
         password: config.password,
         ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
         connectTimeout: 10000,
+        dateStrings: ['DATE'],
       });
 
       return { success: true };

@@ -1,6 +1,9 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool, PoolClient, types } from 'pg';
 import { DatabaseAdapter } from './connection-manager';
 import { ConnectionConfig, QueryResult, SchemaInfo, ColumnInfo, TableInfo } from '../../shared/types';
+
+// Return date values as plain strings (e.g., "2024-01-15") instead of JavaScript Date objects
+types.setTypeParser(1082, (val: string) => val);
 
 export class PostgresAdapter implements DatabaseAdapter {
   private pool: Pool | null = null;
