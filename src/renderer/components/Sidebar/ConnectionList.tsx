@@ -14,6 +14,7 @@ const dbTypeIcons: Record<string, string> = {
   postgresql: 'P',
   mysql: 'M',
   snowflake: 'S',
+  salesforce: 'SF',
 };
 
 export default function ConnectionList() {

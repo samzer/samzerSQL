@@ -2,6 +2,7 @@ import { ConnectionConfig, QueryResult, SchemaInfo, TableInfo, ColumnInfo } from
 import { PostgresAdapter } from './postgres';
 import { MySQLAdapter } from './mysql';
 import { SnowflakeAdapter } from './snowflake';
+import { SalesforceAdapter } from './salesforce';
 
 export interface DatabaseAdapter {
   connect(config: ConnectionConfig): Promise<{ success: boolean; error?: string }>;
@@ -118,6 +119,8 @@ export class ConnectionManager {
         return new MySQLAdapter();
       case 'snowflake':
         return new SnowflakeAdapter();
+      case 'salesforce':
+        return new SalesforceAdapter();
       default:
         throw new Error(`Unsupported database type: ${type}`);
     }

@@ -1,5 +1,5 @@
 // Database connection types
-export type DatabaseType = 'postgresql' | 'mysql' | 'snowflake';
+export type DatabaseType = 'postgresql' | 'mysql' | 'snowflake' | 'salesforce';
 
 export interface ConnectionConfig {
   id: string;
@@ -15,6 +15,9 @@ export interface ConnectionConfig {
   warehouse?: string;
   schema?: string;
   role?: string;
+  // Salesforce-specific
+  loginUrl?: string;
+  securityToken?: string;
   // SSL options
   ssl?: boolean;
   sslCert?: string;

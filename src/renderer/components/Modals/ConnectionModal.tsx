@@ -12,12 +12,14 @@ const databaseTypes: { value: DatabaseType; label: string }[] = [
   { value: 'postgresql', label: 'PostgreSQL' },
   { value: 'mysql', label: 'MySQL' },
   { value: 'snowflake', label: 'Snowflake' },
+  { value: 'salesforce', label: 'Salesforce (SOQL)' },
 ];
 
 const defaultPorts: Record<DatabaseType, number> = {
   postgresql: 5432,
   mysql: 3306,
   snowflake: 443,
+  salesforce: 443,
 };
 
 export default function ConnectionModal() {
@@ -42,6 +44,9 @@ export default function ConnectionModal() {
     warehouse: '',
     schema: 'PUBLIC',
     role: '',
+    // Salesforce-specific
+    loginUrl: 'https://login.salesforce.com',
+    securityToken: '',
   });
 
   const [isTesting, setIsTesting] = useState(false);
@@ -124,6 +129,7 @@ export default function ConnectionModal() {
   };
 
   const isSnowflake = formData.type === 'snowflake';
+  const isSalesforce = formData.type === 'salesforce';
 
   return (
     <Modal
@@ -187,6 +193,26 @@ export default function ConnectionModal() {
               />
             </div>
           </>
+        ) : isSalesforce ? (
+          // Salesforce-specific fields
+          <>
+            <Select
+              label="Environment"
+              options={[
+                { value: 'https://login.salesforce.com', label: 'Production' },
+                { value: 'https://test.salesforce.com', label: 'Sandbox' },
+              ]}
+              value={formData.loginUrl}
+              onChange={(e) => handleChange('loginUrl', e.target.value)}
+            />
+            <Input
+              label="Security Token"
+              type="password"
+              placeholder="Your Salesforce security token"
+              value={formData.securityToken}
+              onChange={(e) => handleChange('securityToken', e.target.value)}
+            />
+          </>
         ) : (
           // PostgreSQL/MySQL fields
           <>
@@ -230,8 +256,8 @@ export default function ConnectionModal() {
           />
         </div>
 
-        {/* SSL option (for non-Snowflake) */}
-        {!isSnowflake && (
+        {/* SSL option (for non-Snowflake, non-Salesforce) */}
+        {!isSnowflake && !isSalesforce && (
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
