@@ -1,5 +1,5 @@
 // Database connection types
-export type DatabaseType = 'postgresql' | 'mysql' | 'snowflake' | 'salesforce';
+export type DatabaseType = 'postgresql' | 'mysql' | 'snowflake' | 'salesforce' | 'sqlite';
 
 export interface ConnectionConfig {
   id: string;
@@ -21,6 +21,8 @@ export interface ConnectionConfig {
   // SSL options
   ssl?: boolean;
   sslCert?: string;
+  // SQLite-specific
+  filePath?: string;
 }
 
 export interface Connection {

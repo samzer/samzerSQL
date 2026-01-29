@@ -13,6 +13,7 @@ const databaseTypes: { value: DatabaseType; label: string }[] = [
   { value: 'mysql', label: 'MySQL' },
   { value: 'snowflake', label: 'Snowflake' },
   { value: 'salesforce', label: 'Salesforce (SOQL)' },
+  { value: 'sqlite', label: 'SQLite' },
 ];
 
 const defaultPorts: Record<DatabaseType, number> = {
@@ -20,6 +21,7 @@ const defaultPorts: Record<DatabaseType, number> = {
   mysql: 3306,
   snowflake: 443,
   salesforce: 443,
+  sqlite: 0,
 };
 
 export default function ConnectionModal() {
@@ -47,6 +49,8 @@ export default function ConnectionModal() {
     // Salesforce-specific
     loginUrl: 'https://login.salesforce.com',
     securityToken: '',
+    // SQLite-specific
+    filePath: '',
   });
 
   const [isTesting, setIsTesting] = useState(false);
@@ -130,6 +134,7 @@ export default function ConnectionModal() {
 
   const isSnowflake = formData.type === 'snowflake';
   const isSalesforce = formData.type === 'salesforce';
+  const isSQLite = formData.type === 'sqlite';
 
   return (
     <Modal
@@ -213,6 +218,19 @@ export default function ConnectionModal() {
               onChange={(e) => handleChange('securityToken', e.target.value)}
             />
           </>
+        ) : isSQLite ? (
+          // SQLite-specific fields
+          <>
+            <Input
+              label="Database File Path"
+              placeholder="/path/to/database.db"
+              value={formData.filePath}
+              onChange={(e) => handleChange('filePath', e.target.value)}
+            />
+            <p className="text-xs text-pastel-text-secondary -mt-2">
+              Enter the full path to your SQLite database file. A new file will be created if it doesn't exist.
+            </p>
+          </>
         ) : (
           // PostgreSQL/MySQL fields
           <>
@@ -241,23 +259,25 @@ export default function ConnectionModal() {
           </>
         )}
 
-        {/* Credentials */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Username"
-            value={formData.username}
-            onChange={(e) => handleChange('username', e.target.value)}
-          />
-          <Input
-            label="Password"
-            type="password"
-            value={formData.password}
-            onChange={(e) => handleChange('password', e.target.value)}
-          />
-        </div>
+        {/* Credentials (not needed for SQLite) */}
+        {!isSQLite && (
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Username"
+              value={formData.username}
+              onChange={(e) => handleChange('username', e.target.value)}
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+            />
+          </div>
+        )}
 
-        {/* SSL option (for non-Snowflake, non-Salesforce) */}
-        {!isSnowflake && !isSalesforce && (
+        {/* SSL option (for non-Snowflake, non-Salesforce, non-SQLite) */}
+        {!isSnowflake && !isSalesforce && !isSQLite && (
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
