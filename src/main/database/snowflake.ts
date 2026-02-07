@@ -19,10 +19,10 @@ interface SnowflakeSDK {
 let snowflake: SnowflakeSDK | null = null;
 
 // Lazy load snowflake-sdk since it's optional
-function getSnowflakeSDK(): SnowflakeSDK {
+async function getSnowflakeSDK(): Promise<SnowflakeSDK> {
   if (!snowflake) {
     try {
-      snowflake = require('snowflake-sdk');
+      snowflake = await import('snowflake-sdk') as unknown as SnowflakeSDK;
     } catch {
       throw new Error('Snowflake SDK not installed. Run: npm install snowflake-sdk');
     }
@@ -36,7 +36,7 @@ export class SnowflakeAdapter implements DatabaseAdapter {
 
   async connect(config: ConnectionConfig): Promise<{ success: boolean; error?: string }> {
     try {
-      const sdk = getSnowflakeSDK();
+      const sdk = await getSnowflakeSDK();
 
       this.connection = sdk.createConnection({
         account: config.account,
@@ -85,7 +85,7 @@ export class SnowflakeAdapter implements DatabaseAdapter {
 
   async testConnection(config: ConnectionConfig): Promise<{ success: boolean; error?: string }> {
     try {
-      const sdk = getSnowflakeSDK();
+      const sdk = await getSnowflakeSDK();
 
       const testConn = sdk.createConnection({
         account: config.account,

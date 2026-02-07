@@ -32,6 +32,7 @@ Thumbs.db
 .claude/
 *.swp
 *.swo
+CLAUDE.md
 
 # Environment
 .env

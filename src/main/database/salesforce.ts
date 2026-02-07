@@ -19,10 +19,11 @@ interface JSForceModule {
 let jsforce: JSForceModule | null = null;
 
 // Lazy load jsforce since it's optional
-function getJSForce(): JSForceModule {
+async function getJSForce(): Promise<JSForceModule> {
   if (!jsforce) {
     try {
-      jsforce = require('jsforce');
+      // @ts-ignore - jsforce is an optional dependency without type declarations
+      jsforce = await import('jsforce') as unknown as JSForceModule;
     } catch {
       throw new Error('jsforce not installed. Run: npm install jsforce');
     }
@@ -35,7 +36,7 @@ export class SalesforceAdapter implements DatabaseAdapter {
 
   async connect(config: ConnectionConfig): Promise<{ success: boolean; error?: string }> {
     try {
-      const sf = getJSForce();
+      const sf = await getJSForce();
       const loginUrl = config.loginUrl || 'https://login.salesforce.com';
       const conn = new sf.Connection({ loginUrl });
       const password = config.password + (config.securityToken || '');
@@ -77,7 +78,7 @@ export class SalesforceAdapter implements DatabaseAdapter {
 
   async testConnection(config: ConnectionConfig): Promise<{ success: boolean; error?: string }> {
     try {
-      const sf = getJSForce();
+      const sf = await getJSForce();
       const loginUrl = config.loginUrl || 'https://login.salesforce.com';
       const conn = new sf.Connection({ loginUrl });
       const password = config.password + (config.securityToken || '');

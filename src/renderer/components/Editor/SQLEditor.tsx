@@ -13,6 +13,7 @@ import { useUIStore } from '../../stores/uiStore';
 import { useQueryStore } from '../../stores/queryStore';
 import { v4 as uuidv4 } from 'uuid';
 import { QueryResult } from '../../../shared/types';
+import { splitStatements } from '../../../shared/sql-utils';
 
 interface SQLEditorProps {
   tabId: string;
@@ -420,76 +421,6 @@ export default function SQLEditor({ tabId, initialContent }: SQLEditorProps) {
     });
   }, [getDialect]);
 
-  // Split SQL content into individual statements by semicolon
-  const splitStatements = useCallback((content: string): string[] => {
-    // Split by semicolon but be careful about strings and comments
-    const statements: string[] = [];
-    let current = '';
-    let inSingleQuote = false;
-    let inDoubleQuote = false;
-    let inLineComment = false;
-    let inBlockComment = false;
-
-    for (let i = 0; i < content.length; i++) {
-      const char = content[i];
-      const nextChar = content[i + 1];
-
-      // Handle line comments
-      if (!inSingleQuote && !inDoubleQuote && !inBlockComment && char === '-' && nextChar === '-') {
-        inLineComment = true;
-        current += char;
-        continue;
-      }
-      if (inLineComment && char === '\n') {
-        inLineComment = false;
-        current += char;
-        continue;
-      }
-
-      // Handle block comments
-      if (!inSingleQuote && !inDoubleQuote && !inLineComment && char === '/' && nextChar === '*') {
-        inBlockComment = true;
-        current += char;
-        continue;
-      }
-      if (inBlockComment && char === '*' && nextChar === '/') {
-        inBlockComment = false;
-        current += char + nextChar;
-        i++;
-        continue;
-      }
-
-      // Handle quotes
-      if (!inLineComment && !inBlockComment) {
-        if (char === "'" && !inDoubleQuote) {
-          inSingleQuote = !inSingleQuote;
-        } else if (char === '"' && !inSingleQuote) {
-          inDoubleQuote = !inDoubleQuote;
-        }
-      }
-
-      // Check for semicolon
-      if (char === ';' && !inSingleQuote && !inDoubleQuote && !inLineComment && !inBlockComment) {
-        const stmt = current.trim();
-        if (stmt) {
-          statements.push(stmt);
-        }
-        current = '';
-        continue;
-      }
-
-      current += char;
-    }
-
-    // Don't forget the last statement (may not end with semicolon)
-    const lastStmt = current.trim();
-    if (lastStmt) {
-      statements.push(lastStmt);
-    }
-
-    return statements;
-  }, []);
-
   const handleRunQuery = useCallback(async () => {
     const connections = useConnectionStore.getState().connections;
     const tabs = useEditorStore.getState().tabs;
@@ -618,7 +549,7 @@ export default function SQLEditor({ tabId, initialContent }: SQLEditorProps) {
 
       setTabExecuting(tabIdRef.current, false);
     }
-  }, [splitStatements]);
+  }, []);
 
   const handleSaveQuery = useCallback(async () => {
     const tabs = useEditorStore.getState().tabs;
