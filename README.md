@@ -1,6 +1,6 @@
 # samzerSQL
 
-A cross-platform desktop SQL client for Snowflake, MySQL, and PostgreSQL with a clean, and minimalistic UI. 
+A cross-platform desktop SQL client for Snowflake, MySQL, PostgreSQL, SQLite, Salesforce, and MotherDuck (DuckDB) with a clean, minimalistic UI. 
 
 ![samzerSQL Screenshot](src/renderer/assets/screenshot.png)
 
@@ -8,7 +8,7 @@ A cross-platform desktop SQL client for Snowflake, MySQL, and PostgreSQL with a 
 
 - **Multi-Database Support**: Connect to Snowflake, MySQL, PostgreSQL, SQLite, Salesforce, and MotherDuck (DuckDB) databases
 - **SQL Editor**: Full-featured editor with syntax highlighting powered by CodeMirror 6
-- **Schema Browser**: Explore databases, schemas, tables, and columns with lazy loading
+- **Database Browser**: Explore databases, schemas, tables, and columns with lazy loading
 - **Auto-Complete**: Context-aware autocomplete for schemas, tables, and columns
   - In SELECT/WHERE clauses: suggests columns from tables in your FROM clause
   - In FROM clause: suggests schemas and tables
