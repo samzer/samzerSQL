@@ -115,6 +115,75 @@ Output will be in the `release/` folder:
 - **Windows**: `.exe` installer
 - **Linux**: `.AppImage`
 
+## Testing
+
+The test suite uses [Vitest](https://vitest.dev/) and covers all database adapters, the connection manager, query storage, SQL utilities, and export functions (98 tests across 9 test files). All tests use mocked dependencies — no real database connections are needed.
+
+### Running Tests
+
+```bash
+# Run all tests once
+npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run a specific test file
+npx vitest run src/main/database/__tests__/postgres.test.ts
+```
+
+### Test Structure
+
+Tests live in `__tests__/` directories alongside the source code they cover:
+
+```
+src/
+  main/
+    database/__tests__/
+      connection-manager.test.ts
+      postgres.test.ts
+      mysql.test.ts
+      snowflake.test.ts
+      salesforce.test.ts
+      sqlite.test.ts
+    storage/__tests__/
+      query-storage.test.ts
+  shared/__tests__/
+    sql-utils.test.ts
+  renderer/utils/__tests__/
+    export.test.ts
+```
+
+## Contributing
+
+1. Fork the repository and create a feature branch from `main`
+2. Make your changes
+3. Run `npm test` and ensure all tests pass
+4. Run `npm run build` to verify the build succeeds
+5. Submit a pull request
+
+### Code Style
+
+- TypeScript strict mode is enabled
+- Use existing patterns in the codebase as a guide
+- Keep changes minimal and focused
+
+### Writing Tests
+
+- Place test files in a `__tests__/` directory next to the source file
+- Use `vi.mock()` with factory functions to mock external dependencies
+- Use `vi.hoisted()` for mock variables referenced inside `vi.mock()` factories
+- Use class-based mocks when mocking constructors (e.g., `class MockPool { ... }`)
+- Reset mock state in `beforeEach` with `vi.clearAllMocks()`
+
+### Adding a New Database Adapter
+
+1. Create the adapter in `src/main/database/` implementing the `DatabaseAdapter` interface
+2. Register it in the `ConnectionManager` factory
+3. Add the connection type to `ConnectionConfig` in `src/shared/types.ts`
+4. Write tests in `src/main/database/__tests__/`
+5. Use `await import()` for lazy-loading optional SDK dependencies (not `require()`)
+
 ## License
 
 MIT
