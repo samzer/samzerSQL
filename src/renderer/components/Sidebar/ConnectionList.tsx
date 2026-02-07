@@ -72,8 +72,9 @@ function ConnectionItem({ connection }: { connection: Connection }) {
       await disconnect(connection.id);
       addToast({ type: 'info', message: `Disconnected from ${connection.config.name}` });
     } else {
-      // Check if password is empty - if so, prompt for it
-      if (!connection.config.password) {
+      // Check if password is empty - if so, prompt for it (skip for types that don't use passwords)
+      const noPasswordNeeded = connection.config.type === 'sqlite' || connection.config.type === 'motherduck';
+      if (!connection.config.password && !noPasswordNeeded) {
         openPasswordPrompt(connection.id);
       } else {
         const result = await connect(connection.id);

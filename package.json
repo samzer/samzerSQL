@@ -22,6 +22,7 @@
     "@codemirror/search": "^6.5.0",
     "@codemirror/state": "^6.3.0",
     "@codemirror/view": "^6.22.0",
+    "@duckdb/node-api": "^1.4.4-r.1",
     "@tanstack/react-virtual": "^3.0.0",
     "jsforce": "^1.11.1",
     "mysql2": "^3.6.5",

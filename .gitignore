@@ -29,10 +29,13 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
-.claude/
 *.swp
 *.swo
+
+# Claude
+.claude/
 CLAUDE.md
+lessons.md
 
 # Environment
 .env

@@ -29,6 +29,9 @@ vi.mock('../salesforce', () => {
 vi.mock('../sqlite', () => {
   return { SQLiteAdapter: class { constructor() { return createMockAdapter(); } } };
 });
+vi.mock('../motherduck', () => {
+  return { MotherDuckAdapter: class { constructor() { return createMockAdapter(); } } };
+});
 
 import { ConnectionManager } from '../connection-manager';
 import { ConnectionConfig } from '../../../shared/types';
@@ -57,7 +60,7 @@ describe('ConnectionManager', () => {
 
   describe('createAdapter (via connect)', () => {
     it('creates correct adapter for each database type', async () => {
-      for (const type of ['postgresql', 'mysql', 'snowflake', 'salesforce', 'sqlite'] as const) {
+      for (const type of ['postgresql', 'mysql', 'snowflake', 'salesforce', 'sqlite', 'motherduck'] as const) {
         const m = new ConnectionManager();
         const result = await m.connect(makeConfig({ id: `${type}-1`, type }));
         expect(result.success).toBe(true);

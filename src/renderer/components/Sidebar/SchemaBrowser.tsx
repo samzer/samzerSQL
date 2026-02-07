@@ -5,6 +5,7 @@ import type { SchemaInfo, TableInfo, ColumnInfo } from '../../../shared/types';
 export default function SchemaBrowser() {
   const { connections, activeConnectionId, schemas, getSchema, getTablesInSchema, getColumns } = useConnectionStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set());
   const [expandedSchemas, setExpandedSchemas] = useState<Set<string>>(new Set());
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
   // Local cache for schema data (tables/views loaded on expand)
@@ -20,6 +21,7 @@ export default function SchemaBrowser() {
   useEffect(() => {
     setSchemaData(new Map());
     setColumnData(new Map());
+    setExpandedDatabases(new Set());
     setExpandedSchemas(new Set());
     setExpandedTables(new Set());
   }, [activeConnectionId]);
@@ -31,12 +33,23 @@ export default function SchemaBrowser() {
     }
   }, [activeConnectionId, isConnected, schema, getSchema]);
 
-  // Auto-expand first schema when data loads
+  // Auto-expand first schema (and first database if compound names) when data loads
   useEffect(() => {
     if (schema) {
       const schemaNames = getSchemaNames(schema);
       if (schemaNames.length > 0 && expandedSchemas.size === 0) {
-        toggleSchema(schemaNames[0]);
+        const hasCompound = schemaNames.some((n) => n.includes('.'));
+        if (hasCompound) {
+          const groups = groupByDatabase(schemaNames);
+          if (groups.length > 0) {
+            setExpandedDatabases(new Set([groups[0].database]));
+            if (groups[0].schemas.length > 0) {
+              toggleSchema(groups[0].schemas[0]);
+            }
+          }
+        } else {
+          toggleSchema(schemaNames[0]);
+        }
       }
     }
   }, [schema]);
@@ -47,6 +60,7 @@ export default function SchemaBrowser() {
     schemas.delete(activeConnectionId);
     setSchemaData(new Map());
     setColumnData(new Map());
+    setExpandedDatabases(new Set());
     setExpandedSchemas(new Set());
     setExpandedTables(new Set());
     setIsLoading(true);
@@ -154,8 +168,22 @@ export default function SchemaBrowser() {
     );
   }
 
+  const toggleDatabase = (dbName: string) => {
+    setExpandedDatabases((prev) => {
+      const next = new Set(prev);
+      if (next.has(dbName)) {
+        next.delete(dbName);
+      } else {
+        next.add(dbName);
+      }
+      return next;
+    });
+  };
+
   // Get schema names from the initial schema data
   const schemaNames = getSchemaNames(schema);
+  const hasCompoundNames = schemaNames.some((n) => n.includes('.'));
+  const databaseGroups = hasCompoundNames ? groupByDatabase(schemaNames) : [];
 
   return (
     <div className="h-full flex flex-col">
@@ -184,8 +212,24 @@ export default function SchemaBrowser() {
       <div className="flex-1 overflow-auto p-2">
         {schemaNames.length === 0 ? (
           <p className="text-xs text-pastel-text-muted text-center py-4">
-            No schemas found
+            No databases found
           </p>
+        ) : hasCompoundNames ? (
+          databaseGroups.map((group) => (
+            <DatabaseGroupItem
+              key={group.database}
+              database={group.database}
+              schemas={group.schemas}
+              isExpanded={expandedDatabases.has(group.database)}
+              expandedSchemas={expandedSchemas}
+              expandedTables={expandedTables}
+              schemaData={schemaData}
+              columnData={columnData}
+              onToggle={() => toggleDatabase(group.database)}
+              onToggleSchema={toggleSchema}
+              onToggleTable={toggleTable}
+            />
+          ))
         ) : (
           schemaNames.map((name) => {
             const data = schemaData.get(name);
@@ -231,8 +275,100 @@ function getSchemaNames(schema?: SchemaInfo): string[] {
   return Array.from(names).sort((a, b) => a.localeCompare(b));
 }
 
+interface DatabaseGroup {
+  database: string;
+  schemas: string[];
+}
+
+function groupByDatabase(schemaNames: string[]): DatabaseGroup[] {
+  const map = new Map<string, string[]>();
+  for (const name of schemaNames) {
+    const dotIdx = name.indexOf('.');
+    const db = dotIdx === -1 ? name : name.substring(0, dotIdx);
+    if (!map.has(db)) map.set(db, []);
+    map.get(db)!.push(name);
+  }
+  return Array.from(map.entries()).map(([database, schemas]) => ({ database, schemas }));
+}
+
+interface DatabaseGroupItemProps {
+  database: string;
+  schemas: string[];
+  isExpanded: boolean;
+  expandedSchemas: Set<string>;
+  expandedTables: Set<string>;
+  schemaData: Map<string, { tables: TableInfo[]; views: TableInfo[]; loading?: boolean }>;
+  columnData: Map<string, { columns: ColumnInfo[]; loading?: boolean }>;
+  onToggle: () => void;
+  onToggleSchema: (name: string) => void;
+  onToggleTable: (key: string, schemaName: string, tableName: string) => void;
+}
+
+function DatabaseGroupItem({
+  database,
+  schemas,
+  isExpanded,
+  expandedSchemas,
+  expandedTables,
+  schemaData,
+  columnData,
+  onToggle,
+  onToggleSchema,
+  onToggleTable,
+}: DatabaseGroupItemProps) {
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-1 py-1 px-1 rounded hover:bg-pastel-bg-hover text-left"
+      >
+        <svg
+          className={`w-3 h-3 text-pastel-text-muted transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+        <svg className="w-4 h-4 text-pastel-accent-orange-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+        </svg>
+        <span className="flex-1 text-xs font-medium text-pastel-text-primary truncate">{database}</span>
+        {isExpanded && (
+          <span className="text-2xs text-pastel-text-muted">{schemas.length}</span>
+        )}
+      </button>
+
+      {isExpanded && (
+        <div className="ml-2">
+          {schemas.map((fullName) => {
+            const displayName = fullName.substring(fullName.indexOf('.') + 1);
+            const data = schemaData.get(fullName);
+            return (
+              <SchemaGroup
+                key={fullName}
+                name={fullName}
+                displayName={displayName}
+                tables={data?.tables || []}
+                views={data?.views || []}
+                isLoading={data?.loading || false}
+                isExpanded={expandedSchemas.has(fullName)}
+                expandedTables={expandedTables}
+                columnData={columnData}
+                onToggle={() => onToggleSchema(fullName)}
+                onToggleTable={onToggleTable}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface SchemaGroupProps {
   name: string;
+  displayName?: string;
   tables: TableInfo[];
   views: TableInfo[];
   isLoading: boolean;
@@ -245,6 +381,7 @@ interface SchemaGroupProps {
 
 function SchemaGroup({
   name,
+  displayName,
   tables,
   views,
   isLoading,
@@ -273,7 +410,7 @@ function SchemaGroup({
         <svg className="w-4 h-4 text-pastel-accent-blue-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
-        <span className="flex-1 text-xs font-medium text-pastel-text-primary truncate">{name}</span>
+        <span className="flex-1 text-xs font-medium text-pastel-text-primary truncate">{displayName ?? name}</span>
         {isExpanded && totalCount > 0 && (
           <span className="text-2xs text-pastel-text-muted">{totalCount}</span>
         )}

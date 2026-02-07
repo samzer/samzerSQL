@@ -67,16 +67,16 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Resizer for Schema Browser */}
+      {/* Resizer for Database Browser */}
       <Resizer direction="horizontal" onResize={handleSchemaResize} />
 
-      {/* Schema Browser section */}
+      {/* Database Browser section */}
       <div
         className="flex-shrink-0 flex flex-col"
         style={{ height: expandedSections.has('schema') ? schemaHeight : 'auto' }}
       >
         <SectionHeader
-          title="Schema Browser"
+          title="Database Browser"
           isExpanded={expandedSections.has('schema')}
           onToggle={() => toggleSection('schema')}
         />

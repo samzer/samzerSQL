@@ -4,6 +4,7 @@ import { MySQLAdapter } from './mysql';
 import { SnowflakeAdapter } from './snowflake';
 import { SalesforceAdapter } from './salesforce';
 import { SQLiteAdapter } from './sqlite';
+import { MotherDuckAdapter } from './motherduck';
 
 export interface DatabaseAdapter {
   connect(config: ConnectionConfig): Promise<{ success: boolean; error?: string }>;
@@ -124,6 +125,8 @@ export class ConnectionManager {
         return new SalesforceAdapter();
       case 'sqlite':
         return new SQLiteAdapter();
+      case 'motherduck':
+        return new MotherDuckAdapter();
       default:
         throw new Error(`Unsupported database type: ${type}`);
     }

@@ -6,7 +6,7 @@ A cross-platform desktop SQL client for Snowflake, MySQL, and PostgreSQL with a 
 
 ## Features
 
-- **Multi-Database Support**: Connect to Snowflake, MySQL, and PostgreSQL databases
+- **Multi-Database Support**: Connect to Snowflake, MySQL, PostgreSQL, SQLite, Salesforce, and MotherDuck (DuckDB) databases
 - **SQL Editor**: Full-featured editor with syntax highlighting powered by CodeMirror 6
 - **Schema Browser**: Explore databases, schemas, tables, and columns with lazy loading
 - **Auto-Complete**: Context-aware autocomplete for schemas, tables, and columns
@@ -59,7 +59,7 @@ npm run package
 ### Connecting to a Database
 
 1. Click **Add Connection** in the sidebar
-2. Select your database type (Snowflake, MySQL, or PostgreSQL)
+2. Select your database type (Snowflake, MySQL, PostgreSQL, SQLite, Salesforce, or MotherDuck)
 3. Enter connection details
 4. Click **Test Connection** to verify
 5. Click **Save** to add the connection
@@ -93,7 +93,8 @@ src/
 │   ├── database/         # Database adapters
 │   │   ├── postgres.ts
 │   │   ├── mysql.ts
-│   │   └── snowflake.ts
+│   │   ├── snowflake.ts
+│   │   └── motherduck.ts
 │   ├── storage/          # Local storage for queries
 │   └── index.ts          # Main entry point
 ├── renderer/             # React frontend
@@ -146,6 +147,7 @@ src/
       snowflake.test.ts
       salesforce.test.ts
       sqlite.test.ts
+      motherduck.test.ts
     storage/__tests__/
       query-storage.test.ts
   shared/__tests__/

@@ -1,5 +1,5 @@
 // Database connection types
-export type DatabaseType = 'postgresql' | 'mysql' | 'snowflake' | 'salesforce' | 'sqlite';
+export type DatabaseType = 'postgresql' | 'mysql' | 'snowflake' | 'salesforce' | 'sqlite' | 'motherduck';
 
 export interface ConnectionConfig {
   id: string;
@@ -23,6 +23,8 @@ export interface ConnectionConfig {
   sslCert?: string;
   // SQLite-specific
   filePath?: string;
+  // MotherDuck-specific
+  motherduckToken?: string;
 }
 
 export interface Connection {

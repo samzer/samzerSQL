@@ -14,6 +14,7 @@ const databaseTypes: { value: DatabaseType; label: string }[] = [
   { value: 'snowflake', label: 'Snowflake' },
   { value: 'salesforce', label: 'Salesforce (SOQL)' },
   { value: 'sqlite', label: 'SQLite' },
+  { value: 'motherduck', label: 'MotherDuck (DuckDB)' },
 ];
 
 const defaultPorts: Record<DatabaseType, number> = {
@@ -22,6 +23,7 @@ const defaultPorts: Record<DatabaseType, number> = {
   snowflake: 443,
   salesforce: 443,
   sqlite: 0,
+  motherduck: 0,
 };
 
 export default function ConnectionModal() {
@@ -51,6 +53,8 @@ export default function ConnectionModal() {
     securityToken: '',
     // SQLite-specific
     filePath: '',
+    // MotherDuck-specific
+    motherduckToken: '',
   });
 
   const [isTesting, setIsTesting] = useState(false);
@@ -135,6 +139,7 @@ export default function ConnectionModal() {
   const isSnowflake = formData.type === 'snowflake';
   const isSalesforce = formData.type === 'salesforce';
   const isSQLite = formData.type === 'sqlite';
+  const isMotherDuck = formData.type === 'motherduck';
 
   return (
     <Modal
@@ -231,6 +236,32 @@ export default function ConnectionModal() {
               Enter the full path to your SQLite database file. A new file will be created if it doesn't exist.
             </p>
           </>
+        ) : isMotherDuck ? (
+          // MotherDuck/DuckDB-specific fields
+          <>
+            <Input
+              label="MotherDuck Token (optional)"
+              type="password"
+              placeholder="Your MotherDuck access token"
+              value={formData.motherduckToken}
+              onChange={(e) => handleChange('motherduckToken', e.target.value)}
+            />
+            <Input
+              label="Database"
+              placeholder="my_database"
+              value={formData.database}
+              onChange={(e) => handleChange('database', e.target.value)}
+            />
+            <Input
+              label="Local File Path (optional)"
+              placeholder="/path/to/database.duckdb"
+              value={formData.filePath}
+              onChange={(e) => handleChange('filePath', e.target.value)}
+            />
+            <p className="text-xs text-pastel-text-secondary -mt-2">
+              With a token: connects to MotherDuck cloud. With a file path: opens a local DuckDB file. Neither: in-memory database.
+            </p>
+          </>
         ) : (
           // PostgreSQL/MySQL fields
           <>
@@ -259,8 +290,8 @@ export default function ConnectionModal() {
           </>
         )}
 
-        {/* Credentials (not needed for SQLite) */}
-        {!isSQLite && (
+        {/* Credentials (not needed for SQLite or MotherDuck) */}
+        {!isSQLite && !isMotherDuck && (
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Username"
@@ -276,8 +307,8 @@ export default function ConnectionModal() {
           </div>
         )}
 
-        {/* SSL option (for non-Snowflake, non-Salesforce, non-SQLite) */}
-        {!isSnowflake && !isSalesforce && !isSQLite && (
+        {/* SSL option (for non-Snowflake, non-Salesforce, non-SQLite, non-MotherDuck) */}
+        {!isSnowflake && !isSalesforce && !isSQLite && !isMotherDuck && (
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
